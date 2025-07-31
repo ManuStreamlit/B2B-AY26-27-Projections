@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 st.set_page_config(page_title="B2B Grade-wise Projection", layout="wide")
-st.title("🎓 AY25-26 vs AY26-27 Projection Dashboard")
+st.title("🎓 B2B Current AY Vs Next AY Projection Dashboard")
 
 grades = ['PN', 'N', 'K1', 'K2', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9']
 growth_grades = ['PN', 'N', 'K1', 'K2', 'G1']
@@ -63,7 +63,7 @@ st.download_button(
 )
 
 # --- 📤 File Upload ---
-uploaded_file = st.file_uploader("📤 Upload AY25-26 Excel File", type=["xlsx"])
+uploaded_file = st.file_uploader("📤 Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
     try:
@@ -80,13 +80,13 @@ if uploaded_file:
             st.error(f"❌ Missing columns: {missing_columns}")
         else:
             st.success("✅ File uploaded and columns are valid.")
-            st.subheader("📘 AY25-26 School Strength (Sample)")
+            st.subheader("📘 School Strength (Sample)")
             st.dataframe(df[required_columns].head(), use_container_width=True)
 
             existing_school_count = df['School Code'].nunique()
             st.info(f"🏫 Existing Schools: {existing_school_count}")
 
-            new_school_count = st.number_input("➕ Expected number of new schools in AY26-27", min_value=0, value=100)
+            new_school_count = st.number_input("➕ Expected number of new schools in Next AY", min_value=0, value=100)
 
             admission_type = st.radio("➕ New Admission in Existing Schools", ["Percentage Growth", "Fixed Number per Grade"])
             if admission_type == "Percentage Growth":
@@ -150,20 +150,20 @@ if uploaded_file:
                         'Product Type': base['Product Type'],
                         'Stock Type': base['Stock Type'],
                         'Grade': grade,
-                        'AY25-26 Strength': base[grade],
-                        'AY26-27 - Promoted': promo[grade],
-                        'AY26-27 - New (Existing)': new_exist[grade],
-                        'AY26-27 - New (New Schools)': new_sch[grade],
-                        'AY26-27 - Total Projected': final[grade]
+                        'Present Strength': base[grade],
+                        'Promoted Strength': promo[grade],
+                        'New Admissions (Existing)': new_exist[grade],
+                        'New (New Schools)': new_sch[grade],
+                        'Total Projected': final[grade]
                     })
             comparison_df = pd.DataFrame(comparison_rows)
-            overall = comparison_df.groupby("Grade")[['AY25-26 Strength', 'AY26-27 - Total Projected']].sum().reset_index()
+            overall = comparison_df.groupby("Grade")[['Present Strength', 'Total Projected']].sum().reset_index()
 
             # --- Dashboard Tabs ---
             st.subheader("📚 Projection Steps with Logic Explanation")
             tabs = st.tabs([
-                "AY25-26 Strength",
-                "Promoted Totals",
+                "Present Strength",
+                "Promoted Strength",
                 "New Admissions (Existing)",
                 "New School Students",
                 "Final Projection",
@@ -171,12 +171,12 @@ if uploaded_file:
             ])
 
             with tabs[0]:
-                st.markdown("### 📘 AY25-26 Strength")
+                st.markdown("### 📘 Present Strength")
                 st.markdown("**Formula:** Sum of students per grade grouped by Product Type and Stock Type")
                 st.dataframe(strength_ay25_26, use_container_width=True)
 
             with tabs[1]:
-                st.markdown("### 🔁 Promoted Totals")
+                st.markdown("### 🔁 Promoted Strength")
                 st.markdown("Simulated grade promotion: `G{i} = G{i-1}`, `PN = 0`, `G9 = 0`")
                 st.dataframe(promoted_totals, use_container_width=True)
 
@@ -205,12 +205,12 @@ if uploaded_file:
             # --- Excel Export ---
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                strength_ay25_26.to_excel(writer, index=False, sheet_name='AY25-26 Strength')
+                strength_ay25_26.to_excel(writer, index=False, sheet_name='Present Strength')
                 school_counts.to_excel(writer, index=False, sheet_name='School Counts')
                 avg_per_school.to_excel(writer, index=False, sheet_name='Avg per School')
                 new_school_students.to_excel(writer, index=False, sheet_name='New School Students')
                 new_admissions.to_excel(writer, index=False, sheet_name='New Admissions (Existing)')
-                promoted_totals.to_excel(writer, index=False, sheet_name='Promoted Totals')
+                promoted_totals.to_excel(writer, index=False, sheet_name='Promoted Strength')
                 comparison_df.to_excel(writer, index=False, sheet_name='Final Projection')
 
             output.seek(0)
@@ -224,4 +224,4 @@ if uploaded_file:
     except Exception as e:
         st.error(f"❌ Error processing file: {e}")
 else:
-    st.info("👆 Upload your AY25-26 Excel file to begin.")
+    st.info("👆 Upload your Excel file to begin.")
